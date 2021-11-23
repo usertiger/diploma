@@ -1,0 +1,5 @@
+.env
+*.sql
+*.sql.gz
+./db_dump/
+wp-content/uploads/*

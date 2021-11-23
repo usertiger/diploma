@@ -1,0 +1,10 @@
+FROM alpine:3.11.6
+RUN apk update && \
+    apk add mariadb-client
+COPY ./crontab /etc/crontab
+RUN crontab /etc/crontab
+RUN touch /var/log/cron.log
+COPY ./cron_entrypoint.sh ./var/scripts/
+COPY ./script_templates/db_backup.sh /var/scripts/
+RUN chmod +x /var/scripts/cron_entrypoint.sh
+RUN chmod +x /var/scripts/db_backup.sh

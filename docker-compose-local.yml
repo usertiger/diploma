@@ -1,0 +1,66 @@
+version: "3"
+ 
+services:
+  db_blog:
+    image: mysql:8.0
+    container_name: db_blog
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASSWORD
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASSWORD
+      MYSQL_DATABASE: $DB_NAME
+    ports:
+      - 42333:3306
+    volumes:
+      - dbdata:/var/lib/mysql
+      - ./db_dump:/docker-entrypoint-initdb.d
+    command: '--default-authentication-plugin=mysql_native_password'
+    networks:
+      - app-network
+ 
+  wp_blog:
+    depends_on:
+      - db_blog
+    image: wordpress:5.4.1-fpm-alpine
+    container_name: wp_blog
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      WORDPRESS_DB_HOST: db_blog:3306
+      WORDPRESS_DB_USER: $MYSQL_USER
+      WORDPRESS_DB_PASSWORD: $MYSQL_PASSWORD
+      WORDPRESS_DB_NAME: $DB_NAME
+    volumes:
+      - wordpress:/var/www/html
+      - ./wp-content/uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes/beonepage:/var/www/html/wp-content/themes/beonepage
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins
+    networks:
+      - app-network
+ 
+  web_blog:
+    depends_on:
+      - wp_blog
+    image: nginx:1.15.12-alpine
+    container_name: web_blog
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - wordpress:/var/www/html
+      - ./wp-content/uploads:/var/www/html/wp-content/uploads
+      - ./wp-content/themes/beonepage:/var/www/html/wp-content/themes/beonepage
+      - ./wp-content/plugins:/var/www/html/wp-content/plugins
+      - ./nginx-conf:/etc/nginx/conf.d
+    networks:
+      - app-network
+ 
+volumes:
+  dbdata:
+  wordpress:
+ 
+networks:
+  app-network:
+    driver: bridge
