@@ -1,0 +1,41 @@
+image: docker:stable
+ 
+variables:
+  IMAGE: ${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+  APP_PATH: ${INSTALLATION_PATH}/${CI_REGISTRY}/${CI_PROJECT_PATH}
+  BACKUP_TARGET: ${INSTALLATION_PATH}/${CI_REGISTRY}/${CI_PROJECT_PATH}/db_backup_daily
+ 
+stages:
+  - release
+  - deploy
+	
+build:production:
+  stage: release
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - apk add --no-cache curl
+    - docker login -u $CI_REGISTRY_USER -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker pull $IMAGE:wp-release || true
+    - docker pull $IMAGE:web-release || true
+    - docker pull $IMAGE:cron-release || true
+    - docker build
+      --cache-from $IMAGE:wp-release
+      --tag $IMAGE:wp-release
+      --file ./Dockerfile_wp.release
+      "."
+    - docker build
+      --cache-from $IMAGE:web-release
+      --tag $IMAGE:web-release
+      --file ./Dockerfile_web.release
+      "."
+    - docker build
+      --cache-from $IMAGE:cron-release
+      --tag $IMAGE:cron-release
+      --file ./Dockerfile_cron
+      "."
+    - docker push $IMAGE:wp-release
+    - docker push $IMAGE:web-release
+    - docker push $IMAGE:cron-release
