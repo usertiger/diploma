@@ -4,7 +4,9 @@ variables:
   IMAGE: ${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
   APP_PATH: ${INSTALLATION_PATH}/${CI_REGISTRY}/${CI_PROJECT_PATH}
   BACKUP_TARGET: ${INSTALLATION_PATH}/${CI_REGISTRY}/${CI_PROJECT_PATH}/db_backup_daily
- 
+
+on: push
+
 stages:
   - release
   - deploy
